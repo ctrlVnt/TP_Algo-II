@@ -152,33 +152,33 @@ gboolean composantesConnexes( GtkWidget *widget, gpointer data ){
   guchar* data_input = gdk_pixbuf_get_pixels( ctx ->pixbuf_input );
   guchar* data_output = gdk_pixbuf_get_pixels( ctx ->pixbuf_output );
   for ( int i = 0; i < size; ++i ){
-    Objet* rep = Trouver( &objects[ i ] ); // tu trouve le représentant
+    Objet* rep = Trouver( &objects[j] ); // tu trouve le représentant
     long int j = rep - objects; // tu trouve sons indice dans les tableaux
-    Pixel* pixel_src = (Pixel*) ( data_input + ( (guchar*) objects[ i ].pixel - data_output ) ); 
+    Pixel* pixel_src = (Pixel*) ( data_input + ( (guchar*) objects[j].pixel - data_output ) ); 
     // pixel_src est la couleur de ce pixel dans l'image input.
     // On l'ajoute à la stat du représentant j.
-    stats[ j ].rouge += pixel_src->rouge;
-    stats[ j ].vert += pixel_src->vert;
-    stats[ j ].bleu += pixel_src->bleu;
-    stats[ j ].nb += 1; // On aura donc la somme cumulée
+    stats[j].rouge += pixel_src->rouge;
+    stats[j].vert += pixel_src->vert;
+    stats[j].bleu += pixel_src->bleu;
+    stats[j].nb += 1; // On aura donc la somme cumulée
   }
 
 
   for ( int i = 0; i < size; ++i ){
-    if (stats[ i ].nb != 0) {
-      objects[ i ].pixel->rouge = stats[ i ].rouge / stats[ i ].nb;
-      objects[ i ].pixel->vert = stats[ i ].vert  / stats[ i ].nb;
-      objects[ i ].pixel->bleu = stats[ i ].bleu  / stats[ i ].nb;
+    if (stats[j].nb != 0) {
+      objects[j].pixel->rouge = stats[j].rouge / stats[j].nb;
+      objects[j].pixel->vert = stats[j].vert  / stats[j].nb;
+      objects[j].pixel->bleu = stats[j].bleu  / stats[j].nb;
     }
   }
 
   free(stats);
 
   for ( int i = 0; i < size; ++i ){
-    Objet* rep = Trouver( &objects[ i ] ); // tu trouve le représentant
-    objects[ i ].pixel->rouge = rep->pixel->rouge;
-    objects[ i ].pixel->bleu = rep->pixel->bleu;
-    objects[ i ].pixel->vert = rep->pixel->vert;
+    Objet* rep = Trouver( &objects[j] ); // tu trouve le représentant
+    objects[j].pixel->rouge = rep->pixel->rouge;
+    objects[j].pixel->bleu = rep->pixel->bleu;
+    objects[j].pixel->vert = rep->pixel->vert;
   }
 
   // Place le pixbuf à visualiser dans le bon widget.
@@ -200,11 +200,11 @@ gboolean composantesConnexesFloues( GtkWidget *widget, gpointer data ){
 
   for(int i = 0 ; i < size; i++){
     int isLastColumn = (i % ctx->width) == ctx->width - 1;
-    if(!isLastColumn && similitude(objects[ i ].pixel, objects[ i+1 ].pixel) <= floue)
-      Union(&objects[ i ], &objects[ i+1 ]);
+    if(!isLastColumn && similitude(objects[j].pixel, objects[i+1].pixel) <= floue)
+      Union(&objects[j], &objects[ i+1 ]);
     int isLastLine = i >= (size - ctx-> width);
-    if( !isLastLine && similitude(objects[ i ].pixel, objects[ i + ctx->width ].pixel) <= floue)
-      Union(&objects[ i ], &objects[ i + ctx->width ]);
+    if( !isLastLine && similitude(objects[j].pixel, objects[i + ctx->width].pixel) <= floue)
+      Union(&objects[j], &objects[ i + ctx->width ]);
   }
 
   StatCouleur *stats = (StatCouleur*) calloc( 4, size * sizeof(StatCouleur) );
@@ -212,32 +212,32 @@ gboolean composantesConnexesFloues( GtkWidget *widget, gpointer data ){
   guchar* data_input = gdk_pixbuf_get_pixels( ctx ->pixbuf_input );
   guchar* data_output = gdk_pixbuf_get_pixels( ctx ->pixbuf_output );
   for ( int i = 0; i < size; ++i ){
-    Objet* rep = Trouver( &objects[ i ] ); // tu trouve le représentant
+    Objet* rep = Trouver( &objects[j] ); // tu trouve le représentant
     long int j = rep - objects; // tu trouve sons indice dans les tableaux
-    Pixel* pixel_src = (Pixel*) ( data_input + ( (guchar*) objects[ i ].pixel - data_output ) ); 
+    Pixel* pixel_src = (Pixel*) ( data_input + ( (guchar*) objects[j].pixel - data_output ) ); 
     // pixel_src est la couleur de ce pixel dans l'image input.
     // On l'ajoute à la stat du représentant j.
-    stats[ j ].rouge += pixel_src->rouge;
-    stats[ j ].vert  += pixel_src->vert;
-    stats[ j ].bleu  += pixel_src->bleu;
-    stats[ j ].nb += 1; // On aura donc la somme cumulée
+    stats[j].rouge += pixel_src->rouge;
+    stats[j].vert  += pixel_src->vert;
+    stats[j].bleu  += pixel_src->bleu;
+    stats[j].nb += 1; // On aura donc la somme cumulée
   }
 
   for ( int i = 0; i < size; ++i ){
-    if (stats[ i ].nb != 0) {
-      objects[ i ].pixel->rouge = stats[ i ].rouge / stats[ i ].nb;
-      objects[ i ].pixel->vert = stats[ i ].vert  / stats[ i ].nb;
-      objects[ i ].pixel->bleu = stats[ i ].bleu  / stats[ i ].nb;
+    if (stats[j].nb != 0) {
+      objects[j].pixel->rouge = stats[j].rouge / stats[j].nb;
+      objects[j].pixel->vert = stats[j].vert  / stats[j].nb;
+      objects[j].pixel->bleu = stats[j].bleu  / stats[j].nb;
     }
   }
 
   free(stats);
 
   for ( int i = 0; i < size; ++i ){
-    Objet* rep = Trouver( &objects[ i ] ); // tu trouve le représentant
-    objects[ i ].pixel->rouge = rep->pixel->rouge;
-    objects[ i ].pixel->bleu = rep->pixel->bleu;
-    objects[ i ].pixel->vert = rep->pixel->vert;
+    Objet* rep = Trouver( &objects[j] ); // tu trouve le représentant
+    objects[j].pixel->rouge = rep->pixel->rouge;
+    objects[j].pixel->bleu = rep->pixel->bleu;
+    objects[j].pixel->vert = rep->pixel->vert;
   }
 
   // Place le pixbuf à visualiser dans le bon widget.
