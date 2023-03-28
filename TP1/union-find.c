@@ -61,6 +61,8 @@ typedef struct {
   double v; // valeur ou brillance comme nombre entre 0 et 1
 } TSVCouleur;
 
+struct timespec myTimerStart;
+struct timespec current;
 //-----------------------------------------------------------------------------
 // Déclaration des fonctions
 //-----------------------------------------------------------------------------
@@ -87,8 +89,6 @@ void Union( Objet* obj1, Objet* obj2 );
 
 TSVCouleur tsv( Pixel* pixel );
 double similitude( Pixel* p1, Pixel* p2 );
-
-
 //-----------------------------------------------------------------------------
 // Programme principal
 //-----------------------------------------------------------------------------
@@ -132,7 +132,16 @@ gboolean selectOutput( GtkWidget *widget, gpointer data ){
 
 gboolean composantesConnexes( GtkWidget *widget, gpointer data ){
   Contexte *ctx = (Contexte*) data;
+
+  clock_gettime(CLOCK_REALTIME, &myTimerStart);
+
   Objet *objects = CreerEnsembles(ctx->pixbuf_output);
+
+  clock_gettime(CLOCK_REALTIME, &current);
+  double t = (( current.tv_sec - myTimerStart.tv_sec) *1000 +
+              ( current.tv_nsec - myTimerStart.tv_nsec)/1000000.0);
+  printf( "time = %lf ms.\n", t );
+
   int size = ( ctx->width ) * ( ctx->height );
 
   for(int i = 0 ; i < size; i++){
@@ -146,39 +155,38 @@ gboolean composantesConnexes( GtkWidget *widget, gpointer data ){
   }
 
 
-  StatCouleur *stats = (StatCouleur*) calloc( 4, size * sizeof(StatCouleur) );
+  StatCouleur *colour = (StatCouleur*) calloc( 4, size * sizeof(StatCouleur) );
 
 
   guchar* data_input = gdk_pixbuf_get_pixels( ctx ->pixbuf_input );
   guchar* data_output = gdk_pixbuf_get_pixels( ctx ->pixbuf_output );
   for ( int i = 0; i < size; ++i ){
-    Objet* rep = Trouver( &objects[j] ); // tu trouve le représentant
-    long int j = rep - objects; // tu trouve sons indice dans les tableaux
+    Objet* rep = Trouver( &objects[i] );
+    long int j = rep - objects;
     Pixel* pixel_src = (Pixel*) ( data_input + ( (guchar*) objects[j].pixel - data_output ) ); 
-    // pixel_src est la couleur de ce pixel dans l'image input.
-    // On l'ajoute à la stat du représentant j.
-    stats[j].rouge += pixel_src->rouge;
-    stats[j].vert += pixel_src->vert;
-    stats[j].bleu += pixel_src->bleu;
-    stats[j].nb += 1; // On aura donc la somme cumulée
+    
+    colour[j].rouge += pixel_src->rouge;
+    colour[j].vert += pixel_src->vert;
+    colour[j].bleu += pixel_src->bleu;
+    colour[j].nb += 1;
   }
 
 
   for ( int i = 0; i < size; ++i ){
-    if (stats[j].nb != 0) {
-      objects[j].pixel->rouge = stats[j].rouge / stats[j].nb;
-      objects[j].pixel->vert = stats[j].vert  / stats[j].nb;
-      objects[j].pixel->bleu = stats[j].bleu  / stats[j].nb;
+    if (colour[i].nb != 0) {
+      objects[i].pixel->rouge = colour[i].rouge / colour[i].nb;
+      objects[i].pixel->bleu = colour[i].bleu  / colour[i].nb;
+      objects[i].pixel->vert = colour[i].vert  / colour[i].nb;
     }
   }
 
-  free(stats);
+  free(colour);
 
   for ( int i = 0; i < size; ++i ){
-    Objet* rep = Trouver( &objects[j] ); // tu trouve le représentant
-    objects[j].pixel->rouge = rep->pixel->rouge;
-    objects[j].pixel->bleu = rep->pixel->bleu;
-    objects[j].pixel->vert = rep->pixel->vert;
+    Objet* rep = Trouver( &objects[i] ); // tu trouve le représentant
+    objects[i].pixel->rouge = rep->pixel->rouge;
+    objects[i].pixel->bleu = rep->pixel->bleu;
+    objects[i].pixel->vert = rep->pixel->vert;
   }
 
   // Place le pixbuf à visualiser dans le bon widget.
@@ -200,44 +208,45 @@ gboolean composantesConnexesFloues( GtkWidget *widget, gpointer data ){
 
   for(int i = 0 ; i < size; i++){
     int isLastColumn = (i % ctx->width) == ctx->width - 1;
-    if(!isLastColumn && similitude(objects[j].pixel, objects[i+1].pixel) <= floue)
-      Union(&objects[j], &objects[ i+1 ]);
+    if(!isLastColumn && similitude(objects[i].pixel, objects[i+1].pixel) <= floue)
+      Union(&objects[i], &objects[ i+1 ]);
     int isLastLine = i >= (size - ctx-> width);
-    if( !isLastLine && similitude(objects[j].pixel, objects[i + ctx->width].pixel) <= floue)
-      Union(&objects[j], &objects[ i + ctx->width ]);
+    if( !isLastLine && similitude(objects[i].pixel, objects[i + ctx->width].pixel) <= floue)
+      Union(&objects[i], &objects[ i + ctx->width ]);
   }
 
-  StatCouleur *stats = (StatCouleur*) calloc( 4, size * sizeof(StatCouleur) );
+  StatCouleur *colour = (StatCouleur*) calloc( 4, size * sizeof(StatCouleur) );
 
-  guchar* data_input = gdk_pixbuf_get_pixels( ctx ->pixbuf_input );
-  guchar* data_output = gdk_pixbuf_get_pixels( ctx ->pixbuf_output );
+  guchar* data_input = gdk_pixbuf_get_pixels( ctx->pixbuf_input );
+  guchar* data_output = gdk_pixbuf_get_pixels( ctx->pixbuf_output );
   for ( int i = 0; i < size; ++i ){
-    Objet* rep = Trouver( &objects[j] ); // tu trouve le représentant
+    Objet* rep = Trouver( &objects[i] ); // tu trouve le représentant
     long int j = rep - objects; // tu trouve sons indice dans les tableaux
     Pixel* pixel_src = (Pixel*) ( data_input + ( (guchar*) objects[j].pixel - data_output ) ); 
     // pixel_src est la couleur de ce pixel dans l'image input.
     // On l'ajoute à la stat du représentant j.
-    stats[j].rouge += pixel_src->rouge;
-    stats[j].vert  += pixel_src->vert;
-    stats[j].bleu  += pixel_src->bleu;
-    stats[j].nb += 1; // On aura donc la somme cumulée
+     colour[j].bleu  += pixel_src->bleu;
+    colour[j].rouge += pixel_src->rouge;
+    colour[j].vert  += pixel_src->vert;
+
+    colour[j].nb += 1; // On aura donc la somme cumulée
   }
 
   for ( int i = 0; i < size; ++i ){
-    if (stats[j].nb != 0) {
-      objects[j].pixel->rouge = stats[j].rouge / stats[j].nb;
-      objects[j].pixel->vert = stats[j].vert  / stats[j].nb;
-      objects[j].pixel->bleu = stats[j].bleu  / stats[j].nb;
+    if (colour[i].nb != 0) {
+      objects[i].pixel->rouge = colour[i].rouge / colour[i].nb;
+      objects[i].pixel->bleu = colour[i].bleu  / colour[i].nb;
+      objects[i].pixel->vert = colour[i].vert  / colour[i].nb;
     }
   }
 
-  free(stats);
+  free(colour);
 
   for ( int i = 0; i < size; ++i ){
-    Objet* rep = Trouver( &objects[j] ); // tu trouve le représentant
-    objects[j].pixel->rouge = rep->pixel->rouge;
-    objects[j].pixel->bleu = rep->pixel->bleu;
-    objects[j].pixel->vert = rep->pixel->vert;
+    Objet* rep = Trouver( &objects[i] ); // tu trouve le représentant
+    objects[i].pixel->rouge = rep->pixel->rouge;
+    objects[i].pixel->vert = rep->pixel->vert;
+    objects[i].pixel->bleu = rep->pixel->bleu;
   }
 
   // Place le pixbuf à visualiser dans le bon widget.
@@ -250,10 +259,10 @@ gboolean composantesConnexesFloues( GtkWidget *widget, gpointer data ){
 
 gboolean seuillerImage( GtkWidget *widget, gpointer data ){
   Contexte* ctx = (Contexte*) data;
-  guchar* dataInput = gdk_pixbuf_get_pixels( ctx->pixbuf_input ); // Pointeur vers le tampon de données
-  guchar* dataOutput = gdk_pixbuf_get_pixels( ctx->pixbuf_output ); // Pointeur vers le tampon de données
-  int rowstrideIn = gdk_pixbuf_get_rowstride( ctx->pixbuf_input ); // nmb octets dans la ligne
-  int rowstrideOut = gdk_pixbuf_get_rowstride( ctx->pixbuf_output ); // nmb octets dans la ligne
+  guchar* dataInput = gdk_pixbuf_get_pixels( ctx->pixbuf_input );
+  guchar* dataOutput = gdk_pixbuf_get_pixels( ctx->pixbuf_output );
+  int rowstrideIn = gdk_pixbuf_get_rowstride( ctx->pixbuf_input );
+  int rowstrideOut = gdk_pixbuf_get_rowstride( ctx->pixbuf_output );
   int seuilValue = gtk_range_get_value( GTK_RANGE( ctx->seuil ) );
 
   for ( int y = 0; y < ctx->height; ++y ){
@@ -287,8 +296,8 @@ Objet* CreerEnsembles( GdkPixbuf* pixbuf ){
   int width = gdk_pixbuf_get_width( pixbuf );
   int height = gdk_pixbuf_get_height( pixbuf );
 
-  Objet *objects = (Objet*) malloc(width*height*sizeof(Objet));
-  int obj = 0;
+  Objet *object = (Objet*) malloc(width*height*sizeof(Objet));
+  int n = 0;
 
   for ( int y = 0; y < height; ++y ){
 
@@ -296,16 +305,16 @@ Objet* CreerEnsembles( GdkPixbuf* pixbuf ){
 
     for ( int x = 0; x < width; ++x ) 
     {
-      objects[obj].rang = 1;
-      objects[obj].pixel = pxl;
-      objects[obj].pere = &objects[obj];
+      object[n].rang = 1;
+      object[n].pixel = pxl;
+      object[n].pere = &object[n];
       pxl++;
-      obj++;
+      n++;
     }
     data += rowstride;
   }
 
-  return objects;
+  return object;
 }
 
 Objet* Trouver( Objet* obj ){

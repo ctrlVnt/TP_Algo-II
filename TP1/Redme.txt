@@ -1,0 +1,25 @@
+2 Seuillage de l'image
+
+Nous utilisons un algorithme 
+qui collecte les pixels en 2 variables,
+une pour l'entrée et une pour la sortie,
+puis nous faisons défiler toutes les lignes 
+de pixels et, en fonction du niveau de gris 
+du pixel unique, nous le définissons sur blanc
+ou noir.
+
+3 Découpage de l'image seuillée en composantes connexes
+
+Avec l'algorithme union-find on crée l'ensemble de pixels sur lequel on va travailler, 
+puis avec l'algorithme "composantesConnexes" on voit le niveau de gris des pixels, si 
+ça correspond on les met dans le même groupe.
+Nous utilisons un calloc sur "couleur" pour attribuer des couleurs au pixel numéro n. 
+
+3.4 Temps d'exécution de Union-Find.
+
+Avec ced.jpeg image le temps est "time = 3,112641 ms."
+Avec Picture1.jpg le temps est "time = 2,793653 ms."
+
+4 Affichage de la couleur moyenne pour chaque région
+
+5 Connexité floue et découpage en composantes connexes floues
