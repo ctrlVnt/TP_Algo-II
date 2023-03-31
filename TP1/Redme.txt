@@ -22,4 +22,13 @@ Avec Picture1.jpg le temps est "time = 2,793653 ms."
 
 4 Affichage de la couleur moyenne pour chaque région
 
+Au lieu d'afficher une couleur aléatoire pour chaque région nous avons désormais une couleur
+qui correspond à la moyenne de chaque canal de couleur
+
 5 Connexité floue et découpage en composantes connexes floues
+
+Nous avons implémenter une fonction similarities qui se base sur du TSV
+On remarque que dès que le seuillage est un peu élevé l'image devient vite très éloigné de l'image 
+d'origine avec beaucoup de gris (pour Picture1.jpg)
+Mais pour ced.jpeg c'est le bleu qui l'emporte, on comprend donc que notre implémentation fonctionne
+comme prévu
