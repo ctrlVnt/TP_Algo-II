@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "memory": "c",
+        "limits": "c",
+        "streambuf": "c",
+        "typeinfo": "c"
+    }
+}

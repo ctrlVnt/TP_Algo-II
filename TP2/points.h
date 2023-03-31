@@ -59,4 +59,12 @@ int TabPoints_nb( TabPoints* tab );
  */
 void TabPoints_termine( TabPoints* tab );
 
+int TabPoints_indexBasGauche( TabPoints* tab );
+
+void TabPoints_triSelonT0( TabPoints* tab );
+
+double TabPoint_orientation(Point pMoins2, Point pMoins1, Point p);
+
+void swap(Point *a, Point *b);
+
 #endif
