@@ -1,67 +1,41 @@
-#include <math.h>
+#include <assert.h>
+#include <stdlib.h>
 #include "points.h"
- 
- 
-Point Point_sub( Point p, Point q )
+
+void TabPoints_init( TabPoints* tab )
 {
-  p.x[ 0 ] -= q.x[ 0 ]; 
-  p.x[ 1 ] -= q.x[ 1 ]; 
-  return p;
+  tab->taille = 100;
+  tab->nb = 0;
+  tab->points = (Point*) malloc( tab->taille * sizeof( Point ) );
 }
- 
-Point Point_add( Point p, Point q )
+
+void TabPoints_ajoute( TabPoints* tab, Point p )
 {
-  p.x[ 0 ] += q.x[ 0 ]; 
-  p.x[ 1 ] += q.x[ 1 ]; 
-  return p;
+  if ( tab->nb < tab->taille )
+    tab->points[ tab->nb++ ] = p;
 }
- 
-Point Point_mul( double c, Point p )
+
+void TabPoints_set( TabPoints* tab, int i, Point p )
 {
-  p.x[ 0 ] *= c;
-  p.x[ 1 ] *= c;
-  return p;
+  assert ( i < tab->nb );
+  tab->points[ i ] = p;
 }
- 
-double Point_dot( Point p, Point q )
+
+Point TabPoints_get( TabPoints* tab, int i )
 {
-  return p.x[ 0 ] * q.x[ 0 ] + p.x[ 1 ] * q.x[ 1 ];
+  assert ( i < tab->nb );
+  return tab->points[ i ];
 }
- 
-double Point_norm2( Point p )
+
+int TabPoints_nb( TabPoints* tab )
 {
-  return Point_dot( p, p );
+  return tab->nb;
 }
- 
-double Point_norm( Point p )
+
+void TabPoints_termine( TabPoints* tab )
 {
-  return sqrt( Point_norm2( p ) );
-}
- 
-double Point_distance( Point p, Point q )
-{
-  return distance( p.x[ 0 ], p.x[ 1 ], q.x[ 0 ], q.x[ 1 ] );
-}
- 
-Point Point_normalize( Point p )
-{
-  return Point_mul( 1.0/Point_norm( p ), p );
-}
- 
-static int compteur_distance = 0;
- 
-double distance( double x1, double y1, double x2, double y2 )
-{
-  ++compteur_distance;
-  return sqrt( (x1-x2)*(x1-x2)+(y1-y2)*(y1-y2) );
-}
- 
-void resetCompteurDistance()
-{
-  compteur_distance = 0;
-}
- 
-int getCompteurDistance()
-{
-  return compteur_distance;
+  if ( tab->points != NULL ) free( tab->points );
+  tab->taille = 0;
+  tab->nb = 0;
+  tab->points = NULL;
 }

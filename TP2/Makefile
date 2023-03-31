@@ -19,7 +19,7 @@ points.o: points.c points.h
 	$(CC) -c $(CFLAGS) $(GTKCFLAGS) points.c -o points.o
 
 clean:
-	rm -f convex convex.o points.o pile.o quicksort.o
+	rm -f convex convex.o points.o
 
 fullclean: clean
 	rm -f *~ *.fig.bak

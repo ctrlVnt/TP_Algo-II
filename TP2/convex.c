@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <gtk/gtk.h>
 #include "points.h"
- 
+
 //-----------------------------------------------------------------------------
 // Déclaration des types
 //-----------------------------------------------------------------------------
@@ -17,8 +17,8 @@ typedef struct SContexte {
   GtkWidget* drawing_area;
   TabPoints P;
 } Contexte;
- 
- 
+
+
 //-----------------------------------------------------------------------------
 // Déclaration des fonctions
 //-----------------------------------------------------------------------------
@@ -26,18 +26,18 @@ typedef struct SContexte {
    Crée l'interface graphique en fonction du contexte \a pCtxt.
 */
 GtkWidget* creerIHM( Contexte* pCtxt );
- 
+
 /**
    c'est la réaction principale qui va redessiner tout.
 */
 gboolean on_draw( GtkWidget *widget, GdkEventExpose *event, gpointer data );
- 
+
 /**
    Génère un certain nombre de points distribués aléatoirement dans le
    disque unité et les ajoute au contexte.
 */
 gboolean diskRandom( GtkWidget *widget, gpointer data );
- 
+
 /**
    Fait la conversion coordonnées réelles de \a p vers coordonnées de la zone de dessin.
    @param p le point en entrée
@@ -45,7 +45,7 @@ gboolean diskRandom( GtkWidget *widget, gpointer data );
    @return ses coordonnées dans la zone de dessin.
 */
 Point point2DrawingArea( Point p, Contexte* pCtxt );
- 
+
 /**
    Affiche un point \a p dans une zone de dessin cairo \a cr comme un disque.
    
@@ -53,7 +53,7 @@ Point point2DrawingArea( Point p, Contexte* pCtxt );
    @param p un point dans la zone de dessin.
  */
 void drawPoint( cairo_t* cr, Point p );
- 
+
 //-----------------------------------------------------------------------------
 // Programme principal
 //-----------------------------------------------------------------------------
@@ -62,18 +62,18 @@ int main( int   argc,
 {
   Contexte context;
   TabPoints_init( &context.P );
- 
+
   /* Passe les arguments à GTK, pour qu'il extrait ceux qui le concernent. */
   gtk_init( &argc, &argv );
   
   /* Crée une fenêtre. */
   creerIHM( &context );
- 
+
   /* Rentre dans la boucle d'événements. */
   gtk_main ();
   return 0;
 }
- 
+
 // c'est la réaction principale qui va redessiner tout.
 gboolean
 on_draw( GtkWidget *widget, GdkEventExpose *event, gpointer data )
@@ -94,14 +94,14 @@ on_draw( GtkWidget *widget, GdkEventExpose *event, gpointer data )
   cairo_set_source_rgb (cr, 0, 0, 1);
   for ( int i = 0; i < TabPoints_nb( ptrP ); ++i )
     drawPoint( cr, point2DrawingArea( TabPoints_get( ptrP, i ), pCtxt ) );
- 
+
   // On a fini, on peut détruire la structure.
   gdk_window_end_draw_frame(window,drawingContext);
   // cleanup
   cairo_region_destroy(cairoRegion);
   return TRUE;
 }
- 
+
 Point point2DrawingArea( Point p, Contexte* pCtxt )
 {
   Point q;
@@ -109,13 +109,13 @@ Point point2DrawingArea( Point p, Contexte* pCtxt )
   q.y = (1.0-p.y)/2.0*pCtxt->height;
   return q;
 }
- 
+
 void drawPoint( cairo_t* cr, Point p )
 {
   cairo_arc( cr, p.x, p.y, 1.5, 0., 2.0 * 3.14159626 );
   cairo_fill( cr );
 }
- 
+
 /// Charge l'image donnée et crée l'interface.
 GtkWidget* creerIHM( Contexte* pCtxt )
 {
@@ -125,7 +125,7 @@ GtkWidget* creerIHM( Contexte* pCtxt )
   GtkWidget* hbox1;
   GtkWidget* button_quit;
   GtkWidget* button_disk_random;
- 
+
   /* Crée une fenêtre. */
   window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
   // Crée un conteneur horizontal box.
@@ -143,7 +143,7 @@ GtkWidget* creerIHM( Contexte* pCtxt )
   // ... votre zone de dessin s'appelle ici "drawing_area"
   g_signal_connect( G_OBJECT ( pCtxt->drawing_area ), "draw",
                     G_CALLBACK( on_draw ), pCtxt );
- 
+
   // Rajoute le 2eme vbox dans le conteneur hbox (pour mettre les boutons sélecteur de points
   gtk_container_add( GTK_CONTAINER( hbox1 ), vbox2 );
   // Crée les boutons de sélection "source"/"destination".
@@ -164,13 +164,13 @@ GtkWidget* creerIHM( Contexte* pCtxt )
   gtk_container_add( GTK_CONTAINER( vbox1 ), button_quit );
   // Rajoute la vbox  dans le conteneur window.
   gtk_container_add( GTK_CONTAINER( window ), vbox1 );
- 
+
   // Rend tout visible
   gtk_widget_show_all( window );
- 
+
   return window;
 }
- 
+
 gboolean diskRandom( GtkWidget *widget, gpointer data )
 {
   Contexte* pCtxt = (Contexte*) data;
@@ -186,6 +186,6 @@ gboolean diskRandom( GtkWidget *widget, gpointer data )
       TabPoints_ajoute( ptrP, p );
     }
   gtk_widget_queue_draw( pCtxt->drawing_area );
- 
+
   return TRUE;
 }
