@@ -210,8 +210,8 @@ gboolean convexeJarvis(GtkWidget *widget, gpointer data)
   Contexte *pCtxt = (Contexte *)data;
   TabPoints *ptrp = &(pCtxt->P);
 
-  struct timespec myTimerStart;
-  clock_gettime(CLOCK_REALTIME, &myTimerStart);
+  struct timespec tStart;
+  clock_gettime(CLOCK_REALTIME, &tStart);
 
   const char *txt = gtk_entry_get_text(GTK_ENTRY(pCtxt->entry));
   pCtxt->pile.taille = atoi(txt);
@@ -221,29 +221,28 @@ gboolean convexeJarvis(GtkWidget *widget, gpointer data)
 
   Point p = *TabPoints_min(ptrp);
   Point p0 = p;
-  Point pointAGauche;
+  Point pointG;
   int count = 0;
  
   do
   {
     PilePoints_empile(pile, p);
-    pointAGauche = TabPoints_get(ptrp, 0);
+    pointG = TabPoints_get(ptrp, 0);
     for (int i = 1; i < TabPoints_nb(ptrp); i++)
     {
-      if (equals(pointAGauche, p) || TabPoint_orientation(p, pointAGauche, TabPoints_get(ptrp, i)) > 0.0)
+      if (equals(pointG, p) || TabPoint_orientation(p, pointG, TabPoints_get(ptrp, i)) > 0.0)
       {
-        pointAGauche = TabPoints_get(ptrp, i);
+        pointG = TabPoints_get(ptrp, i);
       }
     }
-    p = pointAGauche;
+    p = pointG;
     count++;
 
   } while (!equals(p, p0));
 
-  struct timespec current;
-  clock_gettime(CLOCK_REALTIME, &current); 
-  double t = ((current.tv_sec - myTimerStart.tv_sec) * 1000 +
-              (current.tv_nsec - myTimerStart.tv_nsec) / 1000000.0);
+  struct timespec tFinish;
+  clock_gettime(CLOCK_REALTIME, &tFinish); 
+  double t = ((tFinish.tv_sec - tStart.tv_sec) * 1000 + (tFinish.tv_nsec - tStart.tv_nsec) / 1000000.0);
 
   pCtxt->temps_exec = t;
 
