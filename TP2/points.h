@@ -67,4 +67,6 @@ double TabPoint_orientation(Point pMoins2, Point pMoins1, Point p);
 
 void swap(Point *a, Point *b);
 
+Point *TabPoints_min(TabPoints *tab);
+
 #endif

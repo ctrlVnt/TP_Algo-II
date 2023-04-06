@@ -15,11 +15,15 @@
 typedef struct SContexte {
   int width;
   int height;
+  double temps_exec;
   GtkWidget* drawing_area;
   GtkWidget *entry;
   GtkWidget *label;
   TabPoints P;
   PilePoints pile;
+  GtkWidget *label_nb_points;
+  GtkWidget *label_nb_sommets;
+  GtkWidget *label_temps_exec;
 } Contexte;
 
 
@@ -59,6 +63,8 @@ Point point2DrawingArea( Point p, Contexte* pCtxt );
 void drawPoint( cairo_t* cr, Point p );
 
 void drawLine(cairo_t *cr, Point p, Point q);
+
+int equals(Point p1, Point p2);
 //-----------------------------------------------------------------------------
 // Programme principal
 //-----------------------------------------------------------------------------
@@ -83,7 +89,7 @@ int main( int   argc,
 gboolean on_draw( GtkWidget *widget, GdkEventExpose *event, gpointer data )
 {
   Contexte* pCtxt = (Contexte*) data;
-  TabPoints* ptrP = &(pCtxt->P);
+  TabPoints* ptrp = &(pCtxt->P);
   PilePoints *pile = &(pCtxt->pile);
   // c'est la structure qui permet d'afficher dans une zone de dessin
   // via Cairo
@@ -97,8 +103,8 @@ gboolean on_draw( GtkWidget *widget, GdkEventExpose *event, gpointer data )
   
   // Affiche tous les points en bleu.
   cairo_set_source_rgb (cr, 0, 0, 1);
-  for ( int i = 0; i < TabPoints_nb( ptrP ); ++i )
-    drawPoint( cr, point2DrawingArea( TabPoints_get( ptrP, i ), pCtxt ) );
+  for ( int i = 0; i < TabPoints_nb( ptrp ); ++i )
+    drawPoint( cr, point2DrawingArea( TabPoints_get( ptrp, i ), pCtxt ) );
 
   for (int i = 0; i < PilePoints_nb(pile) - 1; ++i)
     drawLine(cr, point2DrawingArea(PilePoints_get(pile, i), pCtxt), point2DrawingArea(PilePoints_get(pile, i + 1), pCtxt));
@@ -106,6 +112,17 @@ gboolean on_draw( GtkWidget *widget, GdkEventExpose *event, gpointer data )
   if (PilePoints_nb(pile) > 0)
     drawLine(cr, point2DrawingArea(PilePoints_get(pile, 0), pCtxt), point2DrawingArea(PilePoints_get(pile, PilePoints_nb(pile) - 1), pCtxt));
 
+  char buffer[20];
+
+  sprintf(buffer, "%d points", TabPoints_nb(ptrp));
+  gtk_label_set_text(GTK_LABEL(pCtxt->label_nb_points), buffer);
+
+  sprintf(buffer, "%d sommets", PilePoints_nb(pile));
+  gtk_label_set_text(GTK_LABEL(pCtxt->label_nb_sommets), buffer);
+
+  sprintf(buffer, "%lf ms", pCtxt->temps_exec);
+  gtk_label_set_text(GTK_LABEL(pCtxt->label_temps_exec), buffer);
+  
   // On a fini, on peut détruire la structure.
   gdk_window_end_draw_frame(window,drawingContext);
   // cleanup
@@ -137,7 +154,7 @@ void drawLine(cairo_t *cr, Point p, Point q)
 gboolean losangeRandom(GtkWidget *widget, gpointer data)
 {
   Contexte *pCtxt = (Contexte *)data;
-  TabPoints *ptrP = &(pCtxt->P);
+  TabPoints *ptrp = &(pCtxt->P);
   const char *txt = gtk_entry_get_text(GTK_ENTRY(pCtxt->entry));
   int nPoints = atoi(txt);
 
@@ -151,7 +168,7 @@ gboolean losangeRandom(GtkWidget *widget, gpointer data)
     pLos.x = p.x * (sqrt(2) / 4) + p.y * (sqrt(2) / 4);
     pLos.y = p.x * -(sqrt(2) / 4) + p.y * (sqrt(2) / 4);
 
-    TabPoints_ajoute(ptrP, pLos);
+    TabPoints_ajoute(ptrp, pLos);
   }
   gtk_widget_queue_draw(pCtxt->drawing_area);
 
@@ -187,6 +204,54 @@ gboolean convexHull(GtkWidget *widget, gpointer data)
   return TRUE;
 }
 
+
+gboolean convexeJarvis(GtkWidget *widget, gpointer data)
+{
+  Contexte *pCtxt = (Contexte *)data;
+  TabPoints *ptrp = &(pCtxt->P);
+
+  struct timespec myTimerStart;
+  clock_gettime(CLOCK_REALTIME, &myTimerStart);
+
+  const char *txt = gtk_entry_get_text(GTK_ENTRY(pCtxt->entry));
+  pCtxt->pile.taille = atoi(txt);
+
+  PilePoints *pile = &(pCtxt->pile);
+  PilePoints_init(pile);
+
+  Point p = *TabPoints_min(ptrp);
+  Point p0 = p;
+  Point pointAGauche;
+  int count = 0;
+ 
+  do
+  {
+    PilePoints_empile(pile, p);
+    pointAGauche = TabPoints_get(ptrp, 0);
+    for (int i = 1; i < TabPoints_nb(ptrp); i++)
+    {
+      if (equals(pointAGauche, p) || TabPoint_orientation(p, pointAGauche, TabPoints_get(ptrp, i)) > 0.0)
+      {
+        pointAGauche = TabPoints_get(ptrp, i);
+      }
+    }
+    p = pointAGauche;
+    count++;
+
+  } while (!equals(p, p0));
+
+  struct timespec current;
+  clock_gettime(CLOCK_REALTIME, &current); 
+  double t = ((current.tv_sec - myTimerStart.tv_sec) * 1000 +
+              (current.tv_nsec - myTimerStart.tv_nsec) / 1000000.0);
+
+  pCtxt->temps_exec = t;
+
+  gtk_widget_queue_draw(pCtxt->drawing_area);
+
+  return TRUE;
+}
+
 /// Charge l'image donnée et crée l'interface.
 GtkWidget* creerIHM( Contexte* pCtxt )
 {
@@ -196,10 +261,14 @@ GtkWidget* creerIHM( Contexte* pCtxt )
   GtkWidget* hbox1;
   GtkWidget* button_quit;
   GtkWidget* button_disk_random;
-  GtkWidget *entry_points;
+  GtkWidget* entry_points;
   GtkWidget* label;
   GtkWidget* button_losange;
   GtkWidget* button_graham;
+  GtkWidget* nb_points;
+  GtkWidget* nb_sommets;
+  GtkWidget* temp_esec;
+  GtkWidget* button_jarvis;
 
   /* Crée une fenêtre. */
   window = gtk_window_new( GTK_WINDOW_TOPLEVEL );
@@ -210,8 +279,8 @@ GtkWidget* creerIHM( Contexte* pCtxt )
   vbox2 = gtk_box_new( GTK_ORIENTATION_VERTICAL, 10 );
   // Crée une zone de dessin
   pCtxt->drawing_area = gtk_drawing_area_new();
-  pCtxt->width  = 500;
-  pCtxt->height = 500;
+  pCtxt->width  = 800;
+  pCtxt->height = 800;
   gtk_widget_set_size_request ( pCtxt->drawing_area, pCtxt->width, pCtxt->height );
   // Crée le pixbuf source et le pixbuf destination
   gtk_container_add( GTK_CONTAINER( hbox1 ), pCtxt->drawing_area );
@@ -235,6 +304,7 @@ GtkWidget* creerIHM( Contexte* pCtxt )
   button_disk_random  = gtk_button_new_with_label( "Points aléatoires dans disque" );
   button_losange  = gtk_button_new_with_label( "Points aléatoires dans le losange" );
   button_graham = gtk_button_new_with_label("convexHull graham");
+  button_jarvis = gtk_button_new_with_label("covexe Jarvis");
   // Connecte la réaction gtk_main_quit à l'événement "clic" sur ce bouton.
   g_signal_connect( button_disk_random, "clicked",
                     G_CALLBACK( diskRandom ),
@@ -250,12 +320,30 @@ GtkWidget* creerIHM( Contexte* pCtxt )
                    G_CALLBACK( convexHull ),
                    pCtxt);
   gtk_container_add( GTK_CONTAINER( vbox2 ), button_graham );
+  
+  nb_points = gtk_label_new("0 points");
+  temp_esec = gtk_label_new("0 ms");
+  nb_sommets = gtk_label_new("0 sommets");
+  pCtxt->label_nb_points = nb_points;
+  pCtxt->label_temps_exec = temp_esec;
+  pCtxt->label_nb_sommets = nb_sommets;
+  gtk_container_add(GTK_CONTAINER(vbox2), nb_points);
+  gtk_container_add(GTK_CONTAINER(vbox2), nb_sommets);
+  gtk_container_add(GTK_CONTAINER(vbox2), temp_esec);
+
+  gtk_container_add(GTK_CONTAINER(vbox2), button_jarvis);
+  g_signal_connect(button_jarvis, "clicked",
+                   G_CALLBACK( convexeJarvis ),
+                   pCtxt);
+  
+  
   // Crée le bouton quitter.
   button_quit = gtk_button_new_with_label( "Quitter" );
   // Connecte la réaction gtk_main_quit à l'événement "clic" sur ce bouton.
   g_signal_connect( button_quit, "clicked",
                     G_CALLBACK( gtk_main_quit ),
                     NULL);
+
   // Rajoute tout dans le conteneur vbox.
   gtk_container_add( GTK_CONTAINER( vbox1 ), hbox1 );
   gtk_container_add( GTK_CONTAINER( vbox1 ), button_quit );
@@ -275,7 +363,7 @@ GtkWidget* creerIHM( Contexte* pCtxt )
 gboolean diskRandom( GtkWidget *widget, gpointer data )
 {
   Contexte* pCtxt = (Contexte*) data;
-  TabPoints* ptrP = &(pCtxt->P);
+  TabPoints* ptrp = &(pCtxt->P);
   const char *txt = gtk_entry_get_text(GTK_ENTRY(pCtxt->entry));
   int nPoints = atoi(txt);
   printf( "diskRandom\n" );
@@ -286,9 +374,16 @@ gboolean diskRandom( GtkWidget *widget, gpointer data )
         p.x = 2.0 * ( rand() / (double) RAND_MAX ) - 1.0;
         p.y = 2.0 * ( rand() / (double) RAND_MAX ) - 1.0;
       } while ( (p.x*p.x+p.y*p.y) > 1.0 );
-      TabPoints_ajoute( ptrP, p );
+      TabPoints_ajoute( ptrp, p );
     }
   gtk_widget_queue_draw( pCtxt->drawing_area );
 
   return TRUE;
+}
+
+int equals(Point p1, Point p2)
+{
+  if (p1.y == p2.y && p1.x == p2.x)
+    return 1;
+  return 0;
 }

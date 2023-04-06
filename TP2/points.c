@@ -66,41 +66,40 @@ int TabPoints_indexBasGauche( TabPoints* tab ){
   return min;
 }
 
-void heapify(TabPoints *tab, int n, int i) {
-    int largest = i;
-    int l = 2*i + 1;
-    int r = 2*i + 2;
-    
-    if (l < n && tab->points[l].y > tab->points[largest].y){
-        largest = l;
-    }
-
-    if (r < n && tab->points[r].y > tab->points[largest].y){
-        largest = r;
-    }
-        
-    if (largest != i) {
-        swap(&tab->points[i], &tab->points[largest]);
-        heapify(tab, n, largest);
-    }
+int cmp(Point origine, Point a, Point b)
+{
+    return TabPoint_orientation(origine, a, b) > 0;
 }
 
-void heapsort(TabPoints *tab, int n) {
-  
-    for (int i = n / 2 - 1; i >= 0; i--){
-        heapify(tab, n, i);
-    }
-
-    for (int i = n - 1; i > 0; i--) {
-        swap(&tab->points[0], &tab->points[i]);
-        heapify(tab, i, 0);
+void quicksort(TabPoints *tab, int first, int last)
+{
+    int pivot, i, j;
+    if (first < last)
+    {
+        pivot = first;
+        i = first;
+        j = last;
+        while (i < j)
+        {
+            while (cmp(tab->points[0], tab->points[i], tab->points[pivot]) && i < last)
+                i++;
+            while (!cmp(tab->points[0], tab->points[j], tab->points[pivot]) && j > first)
+                j--;
+            if (i < j)
+            {
+                swap(&tab->points[i], &tab->points[j]);
+            }
+        }
+        swap(&tab->points[pivot], &tab->points[j]);
+        quicksort(tab, first, j - 1);
+        quicksort(tab, j + 1, last);
     }
 }
 
 void TabPoints_triSelonT0(TabPoints* tab) {
     Point *min = &tab->points[TabPoints_indexBasGauche(tab)];
     swap(min, &tab->points[0]);
-    heapsort(tab, tab->nb);
+    quicksort(tab, 1, tab->nb - 1);
 }
 
 
@@ -114,4 +113,15 @@ void swap(Point *a, Point *b){
     tmp = *a;
     *a = *b;
     *b = tmp;
+}
+
+Point *TabPoints_min(TabPoints *tab)
+{
+  Point *min = tab->points;
+  for (int i = 0; i < tab->nb; i++)
+  {
+    if (tab->points[i].y < min->y)
+      min = &tab->points[i];
+  }
+  return min;
 }
