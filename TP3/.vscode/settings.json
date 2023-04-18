@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "points.h": "c",
-        "particules.h": "c",
-        "forces.h": "c",
-        "obstacles.h": "c",
-        "arbre.h": "c"
-    }
-}
